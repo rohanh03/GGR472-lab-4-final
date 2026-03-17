@@ -47,9 +47,9 @@ map.on('load', () => {
                 type: 'circle',
                 source: 'collisions',
                 paint: {
-                    'circle-radius': 3,
+                    'circle-radius': 2,
                     'circle-color': '#f5a623',
-                    'circle-opacity': 0.6
+                    'circle-opacity': 0.8
                 }
             });
 
