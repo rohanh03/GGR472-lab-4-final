@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------
-GGR472 LAB 4: Incorporating GIS Analysis into web maps using Turf.js 
+GGR472 LAB 4: Incorporating GIS Analysis into web maps using Turf.js
 --------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------
 Step 1: INITIALIZE MAP
 --------------------------------------------------------------------*/
 // Define access token
-mapboxgl.accessToken = 'pk.eyJ1Ijoicm9oYW4yMDAzIiwiYSI6ImNtazRrYTVtMDA4OTEzbW91YTBtOHhxczEifQ.ZVzMbtIQ2tihbIcpSl3fmQ'; 
+mapboxgl.accessToken = 'pk.eyJ1Ijoicm9oYW4yMDAzIiwiYSI6ImNtazRrYTVtMDA4OTEzbW91YTBtOHhxczEifQ.ZVzMbtIQ2tihbIcpSl3fmQ';
 
 // Initialize map and edit to your preference
 const map = new mapboxgl.Map({
     container: 'map', // container id in HTML
-    style: '',  // ****ADD MAP STYLE HERE *****
+    style: 'mapbox://styles/mapbox/dark-v11',
     center: [-79.39, 43.65],  // starting point, longitude/latitude
     zoom: 11 // starting zoom level
 });
@@ -20,40 +20,179 @@ const map = new mapboxgl.Map({
 /*--------------------------------------------------------------------
 Step 2: VIEW GEOJSON POINT DATA ON MAP
 --------------------------------------------------------------------*/
-//HINT: Create an empty variable
-//      Use the fetch method to access the GeoJSON from your online repository
-//      Convert the response to JSON format and then store the response in your new variable
+// Create an empty variable to store collision data for later use
+let collisionData;
 
+// Fetch GeoJSON from GitHub raw URL and store in variable
+fetch('https://raw.githubusercontent.com/rohanh03/GGR472-lab-4-final/main/data/pedcyc_collision_06-21.geojson')
+    .then(response => response.json())
+    .then(data => {
+        collisionData = data;
+    });
 
 
 /*--------------------------------------------------------------------
     Step 3: CREATE BOUNDING BOX AND HEXGRID
 --------------------------------------------------------------------*/
-//HINT: All code to create and view the hexgrid will go inside a map load event handler
-//      First create a bounding box around the collision point data
-//      Access and store the bounding box coordinates as an array variable
-//      Use bounding box coordinates as argument in the turf hexgrid function
-//      **Option: You may want to consider how to increase the size of your bbox to enable greater geog coverage of your hexgrid
-//                Consider return types from different turf functions and required argument types carefully here
+// All code to create and view the hexgrid goes inside the map load event handler
+map.on('load', () => {
+
+    // Fetch GeoJSON from GitHub raw URL once map has loaded
+    fetch('https://raw.githubusercontent.com/rohanh03/GGR472-lab-4-final/main/data/pedcyc_collision_06-21.geojson')
+        .then(response => response.json())
+        .then(data => {
+            collisionData = data;
+
+            // Add collision points as a GeoJSON source
+            map.addSource('collisions', {
+                type: 'geojson',
+                data: collisionData
+            });
+
+            map.addLayer({
+                id: 'collision-points',
+                type: 'circle',
+                source: 'collisions',
+                paint: {
+                    'circle-radius': 3,
+                    'circle-color': '#f5a623',
+                    'circle-opacity': 0.6
+                }
+            });
+
+            // Create bounding box polygon around collision point data
+            const bboxPoly = turf.bboxPolygon(turf.bbox(collisionData));
+
+            // Use transformScale to increase bbox size by 10% for greater geographic coverage
+            const scaledPoly = turf.transformScale(bboxPoly, 1.1);
+
+            // Convert scaled polygon back to bbox array for hexGrid
+            const bboxExpanded = turf.bbox(scaledPoly);
+
+            // Create hexgrid using expanded bounding box (cell size 0.5 km)
+            const hexgrid = turf.hexGrid(bboxExpanded, 0.5, { units: 'kilometers' });
 
 
+            /*--------------------------------------------------------------------
+            Step 4: AGGREGATE COLLISIONS BY HEXGRID
+            --------------------------------------------------------------------*/
+            // Use Turf collect to spatially join collision points to hexagons,
+            // collecting each point's '_id' value into an array called 'values'
+            const collisionsHex = turf.collect(hexgrid, collisionData, '_id', 'values');
 
-/*--------------------------------------------------------------------
-Step 4: AGGREGATE COLLISIONS BY HEXGRID
---------------------------------------------------------------------*/
-//HINT: Use Turf collect function to collect all '_id' properties from the collision points data for each heaxagon
-//      View the collect output in the console. Where there are no intersecting points in polygons, arrays will be empty
+            // Calculate collision count for each hexagon
+            let maxCount = 0;
+            collisionsHex.features.forEach(feature => {
+                // Count the number of collected _id values to get collision count
+                feature.properties.COUNT = feature.properties.values.length;
+                // Track the maximum count across all hexagons for use in paint expression
+                if (feature.properties.COUNT > maxCount) {
+                    maxCount = feature.properties.COUNT;
+                }
+            });
+
+            console.log('Max collisions in a hexagon:', maxCount);
 
 
+            /*--------------------------------------------------------------------
+            Step 5: FINALIZE YOUR WEB MAP
+            --------------------------------------------------------------------*/
+            // Add aggregated hexgrid as a GeoJSON source
+            map.addSource('hexgrid', {
+                type: 'geojson',
+                data: collisionsHex
+            });
 
-// /*--------------------------------------------------------------------
-// Step 5: FINALIZE YOUR WEB MAP
-// --------------------------------------------------------------------*/
-//HINT: Think about the display of your data and usability of your web map.
-//      Update the addlayer paint properties for your hexgrid using:
-//        - an expression
-//        - The COUNT attribute
-//        - The maximum number of collisions found in a hexagon
-//      Add a legend and additional functionality including pop-up windows
+            // Add hexgrid fill layer with choropleth color expression based on COUNT
+            map.addLayer({
+                id: 'hexgrid-fill',
+                type: 'fill',
+                source: 'hexgrid',
+                paint: {
+                    'fill-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'COUNT'],
+                        0, '#f7fbff',
+                        5, '#c6dbef',
+                        15, '#6baed6',
+                        30, '#2171b5',
+                        50, '#084594'
+                    ],
+                    'fill-opacity': [
+                        'case',
+                        ['>', ['get', 'COUNT'], 0],
+                        0.75,
+                        0
+                    ]
+                }
+            }, 'collision-points'); // Insert below points layer
 
+            // Add hexgrid outline layer
+            map.addLayer({
+                id: 'hexgrid-outline',
+                type: 'line',
+                source: 'hexgrid',
+                paint: {
+                    'line-color': '#ffffff',
+                    'line-width': 0.3,
+                    'line-opacity': [
+                        'case',
+                        ['>', ['get', 'COUNT'], 0],
+                        0.4,
+                        0
+                    ]
+                }
+            }, 'collision-points');
 
+            // Add popup on hexagon click
+            map.on('click', 'hexgrid-fill', (e) => {
+                const count = e.features[0].properties.COUNT;
+                if (count > 0) {
+                    new mapboxgl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(`<strong>Collisions:</strong> ${count}`)
+                        .addTo(map);
+                }
+            });
+
+            // Change cursor on hover
+            map.on('mouseenter', 'hexgrid-fill', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'hexgrid-fill', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Build legend
+            const legendEl = document.getElementById('legend');
+            const legendStops = [
+                { color: '#084594', label: '50+' },
+                { color: '#2171b5', label: '30–49' },
+                { color: '#6baed6', label: '15–29' },
+                { color: '#c6dbef', label: '5–14' },
+                { color: '#f7fbff', label: '1–4' }
+            ];
+
+            legendStops.forEach(stop => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<span class="legend-swatch" style="background:${stop.color}"></span>${stop.label}`;
+                legendEl.appendChild(item);
+            });
+
+            // Toggle collision points layer on/off when button is clicked
+            const toggleBtn = document.getElementById('toggle-points');
+            let pointsVisible = true;
+            toggleBtn.addEventListener('click', () => {
+                pointsVisible = !pointsVisible;
+                // Set layer visibility using Mapbox GL setLayoutProperty
+                map.setLayoutProperty(
+                    'collision-points',
+                    'visibility',
+                    pointsVisible ? 'visible' : 'none'
+                );
+                toggleBtn.textContent = pointsVisible ? 'Hide collision points' : 'Show collision points';
+            });
+        });
+});

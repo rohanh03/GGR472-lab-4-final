@@ -7,3 +7,58 @@
     width: 100%;
 }
 
+#legend {
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    background: rgba(30, 30, 30, 0.85);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    z-index: 1;
+}
+
+#legend h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+#layer-toggle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+}
+
+#layer-toggle button {
+    background: rgba(30, 30, 30, 0.85);
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+#layer-toggle button:hover {
+    background: rgba(60, 60, 60, 0.95);
+}
