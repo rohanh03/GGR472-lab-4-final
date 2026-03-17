@@ -23,13 +23,6 @@ Step 2: VIEW GEOJSON POINT DATA ON MAP
 // Create an empty variable to store collision data for later use
 let collisionData;
 
-// Fetch GeoJSON from GitHub raw URL and store in variable
-fetch('https://raw.githubusercontent.com/rohanh03/GGR472-lab-4-final/main/data/pedcyc_collision_06-21.geojson')
-    .then(response => response.json())
-    .then(data => {
-        collisionData = data;
-    });
-
 
 /*--------------------------------------------------------------------
     Step 3: CREATE BOUNDING BOX AND HEXGRID
@@ -114,10 +107,10 @@ map.on('load', () => {
                         ['linear'],
                         ['get', 'COUNT'],
                         0, '#f7fbff',
-                        5, '#c6dbef',
-                        15, '#6baed6',
-                        30, '#2171b5',
-                        50, '#084594'
+                        Math.round(maxCount * 0.1), '#c6dbef',
+                        Math.round(maxCount * 0.3), '#6baed6',
+                        Math.round(maxCount * 0.6), '#2171b5',
+                        maxCount, '#084594'
                     ],
                     'fill-opacity': [
                         'case',
@@ -167,11 +160,11 @@ map.on('load', () => {
             // Build legend
             const legendEl = document.getElementById('legend');
             const legendStops = [
-                { color: '#084594', label: '50+' },
-                { color: '#2171b5', label: '30–49' },
-                { color: '#6baed6', label: '15–29' },
-                { color: '#c6dbef', label: '5–14' },
-                { color: '#f7fbff', label: '1–4' }
+                { color: '#084594', label: `${Math.round(maxCount * 0.6)}+` },
+                { color: '#2171b5', label: `${Math.round(maxCount * 0.3)}–${Math.round(maxCount * 0.6) - 1}` },
+                { color: '#6baed6', label: `${Math.round(maxCount * 0.1)}–${Math.round(maxCount * 0.3) - 1}` },
+                { color: '#c6dbef', label: `1–${Math.round(maxCount * 0.1) - 1}` },
+                { color: '#f7fbff', label: '0' }
             ];
 
             legendStops.forEach(stop => {
