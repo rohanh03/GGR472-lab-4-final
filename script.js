@@ -180,7 +180,7 @@ map.on('load', () => {
             let pointsVisible = true;
             toggleBtn.addEventListener('click', () => {
                 pointsVisible = !pointsVisible;
-                // Set layer visibility using Mapbox GL setLayoutProperty
+                // Set layer visibility
                 map.setLayoutProperty(
                     'collision-points',
                     'visibility',
