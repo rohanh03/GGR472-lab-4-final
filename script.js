@@ -53,10 +53,11 @@ map.on('load', () => {
                 }
             });
 
-            // Create bounding box polygon around collision point data
+            // Create bounding box polygon around collision point data 
+            // (uses bboxPolygon with bbox rather than envelope because later on, hexGrid requires a bbox array anyways)
             const bboxPoly = turf.bboxPolygon(turf.bbox(collisionData));
 
-            // Use transformScale to increase bbox size by 10% for greater geographic coverage
+            // Use transformScale to increase bbox size by 10% for capturing collisions at edge of bounding box
             const scaledPoly = turf.transformScale(bboxPoly, 1.1);
 
             // Convert scaled polygon back to bbox array for hexGrid
@@ -84,7 +85,7 @@ map.on('load', () => {
                 }
             });
 
-            console.log('Max collisions in a hexagon:', maxCount);
+            console.log(maxCount);
 
 
             /*--------------------------------------------------------------------
