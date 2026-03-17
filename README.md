@@ -1,25 +1,15 @@
-# GGR472 Lab 4 — Pedestrian & Cyclist Collision Hexgrid Map
+# GGR472 Lab 4
 
-## Purpose
-This web map visualizes pedestrian and cyclist collision data for Toronto (2006–2021) using an interactive hexgrid choropleth built with Mapbox GL JS and Turf.js. Collisions are spatially aggregated into 0.5 km hexagonal cells, with darker cells indicating higher collision counts. Users can click a hexagon to see its exact count and toggle the underlying collision points layer on or off.
+This repo contains code for an interactive hexgrid choropleth map of Toronto pedestrian and cyclist collisions, as required by Lab 4.
 
-## Data Source
-- **Pedestrian and Cyclist Collisions (2006–2021):** City of Toronto Open Data
-  File: `data/pedcyc_collision_06-21.geojson`
+Link: https://rohanh03.github.io/GGR472-lab-4-final/
 
-## Tools & Libraries
-- [Mapbox GL JS v3.10.0](https://docs.mapbox.com/mapbox-gl-js/) — interactive basemap and layer rendering
-- [Turf.js v7.2.0](https://turfjs.org/) — GIS analysis (bbox, transformScale, hexGrid, collect)
+## Repo Table of Contents
 
-## Running Locally
-From the project root:
-```bash
-python3 -m http.server 8000
-```
-Then open [http://localhost:8000](http://localhost:8000) in your browser.
+/data: Contains `pedcyc_collision_06-21.geojson` — GeoJSON of all pedestrian and cyclist collisions in Toronto from 2006–2021 (City of Toronto Open Data). Fetched directly from GitHub raw URL at runtime.
 
-## Features
-- Choropleth hexgrid showing collision density
-- Click popup displaying collision count per hexagon
-- Toggle button to show/hide raw collision point layer
-- Legend with colour-coded count ranges
+index.html: HTML file to render the webmap with Mapbox GL JS. Contains the map container div, a legend, and a toggle button for the collision points layer.
+
+script.js: JavaScript file that initializes the map, fetches the collision GeoJSON, creates a 0.5 km hexgrid over the bounding box of the data, aggregates collision counts per hexagon using Turf.js, renders a choropleth fill layer, adds click popups showing collision count, and builds the legend.
+
+style.css: CSS file that styles the map container, legend panel, and layer toggle button.
